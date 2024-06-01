@@ -5,6 +5,7 @@ import numpy as np
 import cvxpy as cp
 import matplotlib.pyplot as plt
 import math
+import copy
 
 W = 2e10
 
@@ -169,9 +170,20 @@ def compare_kernels_plot(L_list, X_list, x_values, true_graphs, kernels: dict, b
 
 def eigenvalue_plot(L_list, X_list, x_values, kernels, bandwidth):
     '''
-    plots the eigenvalues of the outputs of global regression for x_values.
+    plots the eigenvalues of the outputs of network regression for x_values.
     '''
     fig, ax = plt.subplots()
+    
+    # plotting the true values
+    x_vals = np.array(x_values)
+    x_vals = x_vals[0 <= x_vals]
+    x_vals = x_vals[x_vals <= 1]
+    y_values = []
+    for x in x_vals:
+        y_values.append(math.sqrt(1 - x**2))
+    plt.scatter(x_vals, y_values, label='true values', color = 'r')
+    
+    # plotting the predictions
     for kernel in kernels:
         lambda_1s = []
         lambda_2s = []
@@ -207,8 +219,16 @@ def eigenvalue_plot(L_list, X_list, x_values, kernels, bandwidth):
             else:
                 print('error!!')
         ax.scatter(lambda_1s, lambda_2s, label=kernel, alpha = 0.3)
-
-    # plt.scatter(lambda_1s, lambda_2s, marker = 'x')
+    
+        print(lambda_1s)
+        print(x_vals)
+        print(y_values)
+        print([x_vals[0], y_values[0]])
+        
+        # establish the connections between the true values and the predictions
+        for idx in range(len(x_values)):
+            plt.plot([lambda_1s[idx], x_vals[idx]], [lambda_2s[idx], y_values[idx]], 'r-')
+    
     plt.xlabel('lambda1')
     plt.ylabel('lambda2')
     plt.title('A plot of non-zero eigenvalues of local regression results')
@@ -260,18 +280,21 @@ def eigenvalue_plot(L_list, X_list, x_values, kernels, bandwidth):
 # #                [-1/k, 3/k, -2/k],
 # #                [-1/k, -2/k, 3/k]]) / (3 / k))
 
-# # x_values = [k for k in range(2, 31)]
-# # true_graphs = [np.array([[2, -1, -1],
-# #                [-1, 3, -2],
-# #                [-1, -2, 3]])/k for k in range(2, 31)]
+# x_values = [k for k in range(2, 31)]
+# true_graphs = [np.array([[2, -1, -1],
+#                [-1, 3, -2],
+#                [-1, -2, 3]])/k for k in range(2, 31)]
 
-# x_values = [k/100 for k in range(450, 470)]
+# x_values = [k/100 for k in range(430, 451)]
 # true_graphs = [np.array([[20, -10, -10],
 #                [-10, 30, -20],
-#                [-10, -20, 30]])/(k/10) for k in range(450, 470)]
+#                [-10, -20, 30]])/(k/10) for k in range(430, 451)]
 
-# # plot_error(L_list, X_list, x_values, true_graphs, lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4, 2)
-# # plot_error(L_list, X_list, x_values, true_graphs, lambda x, bandwidth: 1 - abs(x) / bandwidth, 2)
+# plot_error(L_list, X_list, x_values, true_graphs, lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4, 2)
+
+# print(local_network_regression(L_list, X_list, 4.4, ))
+
+# plot_error(L_list, X_list, x_values, true_graphs, lambda x, bandwidth: 1 - abs(x) / bandwidth, 2)
 # # k=15
 # # print(global_network_regression(L_list, X_list, 15))
 # # print([[2/k, -1/k, -1/k],
@@ -281,11 +304,11 @@ def eigenvalue_plot(L_list, X_list, x_values, kernels, bandwidth):
 
 kernels = {
     # 'Gaussian': lambda x, bandwidth : math.exp(-(x / bandwidth)**2),
-    'Epanechnikov': lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4,
-    'Uniform': lambda x, bandwidth : 0.5,
+    # 'Epanechnikov': lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4,
+    # 'Uniform': lambda x, bandwidth : 0.5,
     'Triangular': lambda x, bandwidth: 1 - abs(x) / bandwidth,
     'RBF': lambda x, bandwidth: math.exp(-bandwidth * x ** 2)
-    }
+}
 
 # compare_kernels_plot(L_list, X_list, x_values, true_graphs, kernels, 2)
 # print(local_network_regression(L_list, X_list, 31, lambda x, bandwidth : math.exp(-(x / bandwidth)**2), 2))
@@ -293,17 +316,23 @@ kernels = {
 # # -----------------------------------------------------------------------------------------------------------------
 # # Constructing our own example using given eigenvalues
 
-# the eigenvector matrix we use (basis) is
-U = np.matrix([
-    [-math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
-    [math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
-    [0, math.sqrt(6)/3, math.sqrt(3)/3]
-])
+# # the eigenvector matrix we use (basis) is
+# U = np.matrix([
+#     [-math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
+#     [math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
+#     [0, math.sqrt(6)/3, math.sqrt(3)/3]
+# ])
 
-# generate the x's, and construct the graphs using reverse SVD
-X_list = [x/10 for x in range(0, 11)]
-L_list = [U @ np.matrix(np.diag([x/10, math.sqrt(1 - (x/10)**2), 0])) @ U.T for x in range(0, 11)]
-# find eigenvalues for the outputs and plot the two non-zero eigvals
-x_values = [x/10 for x in range(-10, 21)]
-# print(local_network_regression(L_list, X_list, -0.9, kernels['Epanechnikov'], 2))
-eigenvalue_plot(L_list, X_list, x_values, kernels, 2)
+# # generate the x's, and construct the graphs using reverse SVD
+# X_list = [x/10 for x in range(0, 11)]
+# L_list = [U @ np.matrix(np.diag([x/10, math.sqrt(1 - (x/10)**2), 0])) @ U.T for x in range(0, 11)]
+# # find eigenvalues for the outputs and plot the two non-zero eigvals
+# x_values = [x/10 for x in range(0, 11)]
+# # print(local_network_regression(L_list, X_list, -0.9, kernels['Epanechnikov'], 2))
+# eigenvalue_plot(L_list, X_list, x_values, kernels, 2)
+# # pred = local_network_regression(L_list, X_list, 0, kernels['Uniform'], 2)
+# # eigenvalues, eigenvectors = np.linalg.eig(pred)
+# # print(pred)
+# # print(eigenvalues)
+# # eigenvalues, eigenvectors = np.linalg.eig(L_list[0])
+# # print(eigenvalues)
