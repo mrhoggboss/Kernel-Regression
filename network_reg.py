@@ -15,7 +15,7 @@ def global_network_regression(L_list: list, X_list: list, x: float):
 
     L_list: a list of np.arrays containing graph laplacians of data
     X_list: a list of floats containing the corresponding covariates
-    x: a scalar which indicates the input predictor.
+    x: a float indicating the input
 
     returns the graph laplacian in the form of a np.array that is the result of global network regression corresponding to x
     '''
@@ -168,6 +168,87 @@ def compare_kernels_plot(L_list, X_list, x_values, true_graphs, kernels: dict, b
     plt.grid(True)
     plt.show()
 
+
+# # -----------------------------------------------------------------------------------------------------------------
+# # Toy Example in the paper
+
+L1 = np.array([[1, -0.5, -0.5], 
+               [-0.5, 1.5, -1],
+               [-0.5, -1, 1.5]])
+L2 = np.array([[0.5, -0.25, -0.25], 
+               [-0.25, 0.75, -0.5], 
+               [-0.25, -0.5, 0.75]])
+L3 = np.array([[1/3, -1/6, -1/6],
+                [-1/6, 0.5, -1/3],
+                [-1/6, -1/3, 0.5]])
+L4 = np.array([[0.25, -0.125, -0.125],
+               [-0.125, 0.375, -0.25], 
+               [-0.125, -0.25, 0.375]])
+
+L_list = [L1, L2, L3, L4]
+X_list = [2, 4, 6, 8]
+
+# print(global_network_regression(L_list, X_list, 7))
+# # print(global_network_regression(L_list, X_list, 5))
+
+# # res = global_network_regression(L_list, X_list, 10)
+# # max_entry = res.max()
+# # res = res / abs(max_entry)
+# # k = 10
+# # print(res)
+# # # print(print(np.array([[2/k, -1/k, -1/k],
+# # #                [-1/k, 3/k, -2/k],
+# # #                [-1/k, -2/k, 3/k]])))
+# # # print('---------')
+# # print(res)
+# # # print(local_network_regression(L_list, X_list, 5, lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4, 2)*24)
+
+# # # print(np.array([[2/k, -1/k, -1/k],
+# # #                [-1/k, 3/k, -2/k],
+# # #                [-1/k, -2/k, 3/k]]) / (frobenius_norm(np.array([[2/k, -1/k, -1/k],
+# # #                [-1/k, 3/k, -2/k],
+# # #                [-1/k, -2/k, 3/k]]), np.zeros((3, 3)))))
+
+# # print(np.array([[2/k, -1/k, -1/k],
+# #                [-1/k, 3/k, -2/k],
+# #                [-1/k, -2/k, 3/k]]) / (3 / k))
+
+# x_values = [k for k in range(2, 31)]
+# true_graphs = [np.array([[2, -1, -1],
+#                [-1, 3, -2],
+#                [-1, -2, 3]])/k for k in range(2, 31)]
+
+# x_values = [k/100 for k in range(430, 451)]
+# true_graphs = [np.array([[20, -10, -10],
+#                [-10, 30, -20],
+#                [-10, -20, 30]])/(k/10) for k in range(430, 451)]
+
+# plot_error(L_list, X_list, x_values, true_graphs, lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4, 2)
+
+# print(local_network_regression(L_list, X_list, 4.4, ))
+
+# plot_error(L_list, X_list, x_values, true_graphs, lambda x, bandwidth: 1 - abs(x) / bandwidth, 2)
+# # k=15
+# # print(global_network_regression(L_list, X_list, 15))
+# # print([[2/k, -1/k, -1/k],
+# #                [-1/k, 3/k, -2/k],
+# #                [-1/k, -2/k, 3/k]])
+
+
+kernels = {
+    # 'Gaussian': lambda x, bandwidth : math.exp(-(x / bandwidth)**2),
+    # 'Epanechnikov': lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4,
+    # 'Uniform': lambda x, bandwidth : 0.5,
+    'Triangular': lambda x, bandwidth: 1 - abs(x) / bandwidth,
+    'RBF': lambda x, bandwidth: math.exp(-bandwidth * x ** 2)
+}
+
+# compare_kernels_plot(L_list, X_list, x_values, true_graphs, kernels, 2)
+# print(local_network_regression(L_list, X_list, 31, lambda x, bandwidth : math.exp(-(x / bandwidth)**2), 2))
+
+# # -----------------------------------------------------------------------------------------------------------------
+# # Constructing our own example using given eigenvalues
+
 def eigenvalue_plot(L_list, X_list, x_values, kernels, bandwidth):
     '''
     plots the eigenvalues of the outputs of network regression for x_values.
@@ -236,86 +317,6 @@ def eigenvalue_plot(L_list, X_list, x_values, kernels, bandwidth):
     plt.grid(True)
     plt.show()
 
-
-# # -----------------------------------------------------------------------------------------------------------------
-# # Toy Example in the paper
-
-# L1 = np.array([[1, -0.5, -0.5], 
-#                [-0.5, 1.5, -1],
-#                [-0.5, -1, 1.5]])
-# L2 = np.array([[0.5, -0.25, -0.25], 
-#                [-0.25, 0.75, -0.5], 
-#                [-0.25, -0.5, 0.75]])
-# L3 = np.array([[1/3, -1/6, -1/6],
-#                 [-1/6, 0.5, -1/3],
-#                 [-1/6, -1/3, 0.5]])
-# L4 = np.array([[0.25, -0.125, -0.125],
-#                [-0.125, 0.375, -0.25], 
-#                [-0.125, -0.25, 0.375]])
-
-# L_list = [L1, L2, L3, L4]
-# X_list = [2, 4, 6, 8]
-
-# # print(global_network_regression(L_list, X_list, 5))
-
-# # res = global_network_regression(L_list, X_list, 10)
-# # max_entry = res.max()
-# # res = res / abs(max_entry)
-# # k = 10
-# # print(res)
-# # # print(print(np.array([[2/k, -1/k, -1/k],
-# # #                [-1/k, 3/k, -2/k],
-# # #                [-1/k, -2/k, 3/k]])))
-# # # print('---------')
-# # print(res)
-# # # print(local_network_regression(L_list, X_list, 5, lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4, 2)*24)
-
-# # # print(np.array([[2/k, -1/k, -1/k],
-# # #                [-1/k, 3/k, -2/k],
-# # #                [-1/k, -2/k, 3/k]]) / (frobenius_norm(np.array([[2/k, -1/k, -1/k],
-# # #                [-1/k, 3/k, -2/k],
-# # #                [-1/k, -2/k, 3/k]]), np.zeros((3, 3)))))
-
-# # print(np.array([[2/k, -1/k, -1/k],
-# #                [-1/k, 3/k, -2/k],
-# #                [-1/k, -2/k, 3/k]]) / (3 / k))
-
-# x_values = [k for k in range(2, 31)]
-# true_graphs = [np.array([[2, -1, -1],
-#                [-1, 3, -2],
-#                [-1, -2, 3]])/k for k in range(2, 31)]
-
-# x_values = [k/100 for k in range(430, 451)]
-# true_graphs = [np.array([[20, -10, -10],
-#                [-10, 30, -20],
-#                [-10, -20, 30]])/(k/10) for k in range(430, 451)]
-
-# plot_error(L_list, X_list, x_values, true_graphs, lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4, 2)
-
-# print(local_network_regression(L_list, X_list, 4.4, ))
-
-# plot_error(L_list, X_list, x_values, true_graphs, lambda x, bandwidth: 1 - abs(x) / bandwidth, 2)
-# # k=15
-# # print(global_network_regression(L_list, X_list, 15))
-# # print([[2/k, -1/k, -1/k],
-# #                [-1/k, 3/k, -2/k],
-# #                [-1/k, -2/k, 3/k]])
-
-
-kernels = {
-    # 'Gaussian': lambda x, bandwidth : math.exp(-(x / bandwidth)**2),
-    # 'Epanechnikov': lambda x, bandwidth : 3 * (1 - (x / bandwidth)**2) / 4,
-    # 'Uniform': lambda x, bandwidth : 0.5,
-    'Triangular': lambda x, bandwidth: 1 - abs(x) / bandwidth,
-    'RBF': lambda x, bandwidth: math.exp(-bandwidth * x ** 2)
-}
-
-# compare_kernels_plot(L_list, X_list, x_values, true_graphs, kernels, 2)
-# print(local_network_regression(L_list, X_list, 31, lambda x, bandwidth : math.exp(-(x / bandwidth)**2), 2))
-
-# # -----------------------------------------------------------------------------------------------------------------
-# # Constructing our own example using given eigenvalues
-
 # # the eigenvector matrix we use (basis) is
 # U = np.matrix([
 #     [-math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
@@ -336,3 +337,236 @@ kernels = {
 # # print(eigenvalues)
 # # eigenvalues, eigenvectors = np.linalg.eig(L_list[0])
 # # print(eigenvalues)
+
+# # -----------------------------------------------------------------------------------------------------------------
+# # Polynomial Regression with the toy example and the eigenvalue plot
+
+def polynomial_network_regression(L_list: list, X_list: list, x):
+    '''
+    performs polynomial global network regression based on the given dataset and the input predictor
+
+    L_list: a list of np.arrays containing graph laplacians of data
+    X_list: a list of numpy 2 by 1 matrices (ndarrays) containing the corresponding covariates
+    x: a numpy 2 by 1 matrix indicating the input
+
+    returns the graph laplacian in the form of a np.array that is the result of polynomial global network regression corresponding to x
+    '''
+
+    # find sample mean and covariance
+    
+    data_merged = np.hstack(X_list)
+    mu = np.mean(data_merged, axis=1, keepdims=True)
+    sigma = np.cov(data_merged)
+    sigma_inv = np.linalg.inv(sigma)
+    
+    # find weights and B
+    def weights_global(X, x):
+        weight = 1 + (X - mu).T @ sigma_inv @ (x - mu)
+        return weight[0, 0]
+    m = L_list[0].shape[0] # the number of nodes - also the dimension of the graph laplacians
+    n = len(L_list) # the number (X, L), i.e., the number of datapoints
+    weights = [weights_global(X_list[k], x) for k in range(n)]
+    B = sum((weights[k] * L_list[k]) for k in range(n)) / sum(weights) # this is a m by m matrix
+
+    # now we solve the optimization problem
+    # minimizer L
+    L = cp.Variable((m, m), symmetric=True)
+
+    # the set of linear constraints
+    constraints = [L[i, j] == L[j, i] for i in range(m) for j in range(m)]  # Symmetry
+    constraints += [sum(L[i, :]) == 0 for i in range(m)]  # Row sum to zero
+    constraints += [L[i, j] <= 0 for i in range(m) for j in range(m) if i != j]  # edge weights must be non-neg
+    constraints += [L[i, j] >= -W for i in range(m) for j in range(m) if i != j]  # W?
+    
+    # the objective function
+    objective = cp.Minimize(cp.sum_squares(L - B))
+    prob = cp.Problem(objective, constraints)
+    prob.solve(solver=cp.OSQP)
+    sol = L.value
+
+    # print(sol)
+
+    # keep only the positive eig vectors
+    eval, evec = np.linalg.eig(sol)
+    eval = np.where(eval > 0, eval, 0)
+    sol = evec @ np.diag(eval) @ evec.T
+
+    return sol
+
+# # the toy example with quadratic covariates
+# L1 = np.array([[1, -0.5, -0.5], 
+#                [-0.5, 1.5, -1],
+#                [-0.5, -1, 1.5]])
+# L2 = np.array([[0.5, -0.25, -0.25], 
+#                [-0.25, 0.75, -0.5], 
+#                [-0.25, -0.5, 0.75]])
+# L3 = np.array([[1/3, -1/6, -1/6],
+#                 [-1/6, 0.5, -1/3],
+#                 [-1/6, -1/3, 0.5]])
+# L4 = np.array([[0.25, -0.125, -0.125],
+#                [-0.125, 0.375, -0.25], 
+#                [-0.125, -0.25, 0.375]])
+
+# L_list = [L1, L2, L3, L4]
+# X_list = [np.array([[2],
+#                     [4]]), 
+#           np.array([[4],
+#                     [16]]), 
+#           np.array([[6],
+#                    [36]]),
+#           np.array([[8],
+#                    [64]])]
+
+# print(polynomial_network_regression(L_list, X_list, np.array([[7], [49]])))
+def compare_polynomial_plot(L_list, X_list, x_values, true_graphs):
+    y_values = dict()
+    global_reg = []
+    poly_reg = []
+    X_list_squared = [np.array([[X_list[k]], [X_list[k]**2]]) for k in range(len(X_list))]
+    x_squared = [np.array([[x_values[k]], [x_values[k]**2]]) for k in range(len(x_values))]
+    for i in range(len(x_values)):
+        global_reg.append(frobenius_norm(global_network_regression(L_list, X_list, x_values[i]), true_graphs[i]))
+    y_values['global'] = global_reg
+    for i in range(len(x_values)):
+        poly_reg.append(frobenius_norm(polynomial_network_regression(L_list, X_list_squared, x_squared[i]), true_graphs[i]))
+    y_values['quadratic'] = poly_reg
+    # print(y_values)
+    plt.figure(figsize=(10, 6))
+    plt.plot(x_values, y_values['global'], label='global')
+    plt.plot(x_values, y_values['quadratic'], label='quadratic')
+    plt.xlabel('Predictor X')
+    plt.ylabel('Frobenius Norm')
+    plt.title('Frobenius Norm vs Predictor X for global and quadratic Network Regression')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+x_values = [k for k in range(2, 31)]
+true_graphs = [np.array([[2, -1, -1],
+               [-1, 3, -2],
+               [-1, -2, 3]])/k for k in range(2, 31)]
+
+# compare_polynomial_plot(L_list, X_list, x_values, true_graphs)
+
+# # ----------------------------------------------------------------------------------------------------
+# # comparing eigvals for global and polynomial reg
+
+def global_poly_eigenvalue_plot(L_list, X_list, x_values):
+    '''
+    X_list: a list of floats representing the covariates
+    x_values: a list of floats representing the inputs to the regression algorithm
+
+    plots the eigenvalues of the outputs of network regression for x_values.
+    '''
+    fig, ax = plt.subplots()
+    
+    # plotting the true values
+    x_vals = np.array(x_values)
+    x_vals = x_vals[0 <= x_vals]
+    x_vals = x_vals[x_vals <= 1]
+    y_values = []
+    for x in x_vals:
+        y_values.append(math.sqrt(1 - x**2))
+    plt.scatter(x_vals, y_values, label='true values', color = 'r')
+    
+    # plotting the predictions for global
+    lambda_1s = []
+    lambda_2s = []
+
+    for i in range(len(x_values)):
+        pred = global_network_regression(L_list, X_list, x_values[i])
+        eigenvalues, eigenvectors = np.linalg.eig(pred)
+        non_zero = []
+        # to make sure we only exclude one zero from the eigenvalues
+        flag = True
+        for eval in eigenvalues:
+            if abs(eval) < 1e-15 and flag:
+                flag = False
+            else:
+                non_zero.append(eval)
+
+        # non_zero.sort()
+        if 5.77e-01 < abs(eigenvectors[0, 0]) < 5.78e-01:
+            # column corresponding to zero goes first
+            lambda_1s.append(non_zero[0])
+            lambda_2s.append(non_zero[1])
+        elif 4.08e-01 < abs(eigenvectors[0, 0]) < 4.09e-01:
+            # column corresponding to y goes first
+            lambda_2s.append(non_zero[0])
+            lambda_1s.append(non_zero[1])
+        elif 7.07e-01 < abs(eigenvectors[0, 0])< 7.08e-01:
+            # column corresponding to x goes first
+            lambda_1s.append(non_zero[0])
+            lambda_2s.append(non_zero[1])
+        elif eigenvectors[0, 0] == 1 and eigenvectors[1, 1] == 1 and eigenvectors[2, 2] == 1:
+            lambda_1s.append(0)
+            lambda_2s.append(0)
+        else:
+            print('error!!')
+    ax.scatter(lambda_1s, lambda_2s, label='global', alpha = 0.3)
+
+    # establish the connections between the true values and the predictions
+    for idx in range(len(x_values)):
+        plt.plot([lambda_1s[idx], x_vals[idx]], [lambda_2s[idx], y_values[idx]], 'b-')
+
+    # plotting the predictions for quadratic
+    lambda_1s = []
+    lambda_2s = []
+    X_list_squared = [np.array([[X_list[k]], [X_list[k]**2]]) for k in range(len(X_list))]
+    x_squared = [np.array([[x_values[k]], [x_values[k]**2]]) for k in range(len(x_values))]
+    for i in range(len(x_values)):
+        pred = polynomial_network_regression(L_list, X_list_squared, x_squared[i])
+        eigenvalues, eigenvectors = np.linalg.eig(pred)
+        non_zero = []
+        # to make sure we only exclude one zero from the eigenvalues
+        flag = True
+        for eval in eigenvalues:
+            if abs(eval) < 1e-15 and flag:
+                flag = False
+            else:
+                non_zero.append(eval)
+
+        # non_zero.sort()
+        if 5.77e-01 < abs(eigenvectors[0, 0]) < 5.78e-01:
+            # column corresponding to zero goes first
+            lambda_1s.append(non_zero[0])
+            lambda_2s.append(non_zero[1])
+        elif 4.08e-01 < abs(eigenvectors[0, 0]) < 4.09e-01:
+            # column corresponding to y goes first
+            lambda_2s.append(non_zero[0])
+            lambda_1s.append(non_zero[1])
+        elif 7.07e-01 < abs(eigenvectors[0, 0])< 7.08e-01:
+            # column corresponding to x goes first
+            lambda_1s.append(non_zero[0])
+            lambda_2s.append(non_zero[1])
+        elif eigenvectors[0, 0] == 1 and eigenvectors[1, 1] == 1 and eigenvectors[2, 2] == 1:
+            lambda_1s.append(0)
+            lambda_2s.append(0)
+        else:
+            print('error!!')
+    ax.scatter(lambda_1s, lambda_2s, label='quadratic', alpha = 0.3)
+    
+    # establish the connections between the true values and the predictions
+    for idx in range(len(x_values)):
+        plt.plot([lambda_1s[idx], x_vals[idx]], [lambda_2s[idx], y_values[idx]], 'r-')
+    
+    plt.xlabel('lambda1')
+    plt.ylabel('lambda2')
+    plt.title('A plot of non-zero eigenvalues of global and quadratic regression results')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+# # the eigenvector matrix we use (basis) is
+U = np.matrix([
+    [-math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
+    [math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
+    [0, math.sqrt(6)/3, math.sqrt(3)/3]
+])
+
+# generate the x's, and construct the graphs using reverse SVD
+X_list = [x/10 for x in range(0, 11)]
+L_list = [U @ np.matrix(np.diag([x/10, math.sqrt(1 - (x/10)**2), 0])) @ U.T for x in range(0, 11)]
+# find eigenvalues for the outputs and plot the two non-zero eigvals
+x_values = [x/100 for x in range(0, 101)]
+global_poly_eigenvalue_plot(L_list, X_list, x_values)
