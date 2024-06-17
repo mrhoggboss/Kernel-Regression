@@ -346,10 +346,10 @@ def polynomial_network_regression(L_list: list, X_list: list, x):
     performs polynomial global network regression based on the given dataset and the input predictor
 
     L_list: a list of np.arrays containing graph laplacians of data
-    X_list: a list of numpy 2 by 1 matrices (ndarrays) containing the corresponding covariates
-    x: a numpy 2 by 1 matrix indicating the input
+    X_list: a list of numpy n by 1 matrices (ndarrays) containing the corresponding covariates
+    x: a numpy n by 1 matrix indicating the input
 
-    returns the graph laplacian in the form of a np.array that is the result of polynomial global network regression corresponding to x
+    returns the graph laplacian in the form of a np.array that is the result of polynomial (of degree n) global network regression corresponding to x
     '''
 
     # find sample mean and covariance
@@ -418,22 +418,22 @@ def polynomial_network_regression(L_list: list, X_list: list, x):
 #                    [64]])]
 
 # print(polynomial_network_regression(L_list, X_list, np.array([[7], [49]])))
-def compare_polynomial_plot(L_list, X_list, x_values, true_graphs):
+def compare_polynomial_plot(L_list, X_list, x_values, true_graphs, degree):
     y_values = dict()
     global_reg = []
     poly_reg = []
-    X_list_squared = [np.array([[X_list[k]], [X_list[k]**2]]) for k in range(len(X_list))]
-    x_squared = [np.array([[x_values[k]], [x_values[k]**2]]) for k in range(len(x_values))]
+    X_list_poly = [np.array([[X_list[k]**deg] for deg in range(1, degree+1)]) for k in range(len(X_list))]
+    x_squared = [np.array([[x_values[k]**deg] for deg in range(1, degree+1)]) for k in range(len(x_values))]
     for i in range(len(x_values)):
         global_reg.append(frobenius_norm(global_network_regression(L_list, X_list, x_values[i]), true_graphs[i]))
     y_values['global'] = global_reg
     for i in range(len(x_values)):
-        poly_reg.append(frobenius_norm(polynomial_network_regression(L_list, X_list_squared, x_squared[i]), true_graphs[i]))
-    y_values['quadratic'] = poly_reg
+        poly_reg.append(frobenius_norm(polynomial_network_regression(L_list, X_list_poly, x_squared[i]), true_graphs[i]))
+    y_values[str(degree)] = poly_reg
     # print(y_values)
     plt.figure(figsize=(10, 6))
     plt.plot(x_values, y_values['global'], label='global')
-    plt.plot(x_values, y_values['quadratic'], label='quadratic')
+    plt.plot(x_values, y_values[str(degree)], label='degree '+str(degree))
     plt.xlabel('Predictor X')
     plt.ylabel('Frobenius Norm')
     plt.title('Frobenius Norm vs Predictor X for global and quadratic Network Regression')
@@ -441,17 +441,17 @@ def compare_polynomial_plot(L_list, X_list, x_values, true_graphs):
     plt.grid(True)
     plt.show()
 
-x_values = [k for k in range(2, 31)]
+x_values = [k for k in range(2, 9)]
 true_graphs = [np.array([[2, -1, -1],
                [-1, 3, -2],
-               [-1, -2, 3]])/k for k in range(2, 31)]
+               [-1, -2, 3]])/k for k in range(2, 9)]
 
-# compare_polynomial_plot(L_list, X_list, x_values, true_graphs)
+# compare_polynomial_plot(L_list, X_list, x_values, true_graphs, 4)
 
 # # ----------------------------------------------------------------------------------------------------
 # # comparing eigvals for global and polynomial reg
 
-def global_poly_eigenvalue_plot(L_list, X_list, x_values):
+def global_poly_eigenvalue_plot(L_list, X_list, x_values, degree: int):
     '''
     X_list: a list of floats representing the covariates
     x_values: a list of floats representing the inputs to the regression algorithm
@@ -512,10 +512,10 @@ def global_poly_eigenvalue_plot(L_list, X_list, x_values):
     # plotting the predictions for quadratic
     lambda_1s = []
     lambda_2s = []
-    X_list_squared = [np.array([[X_list[k]], [X_list[k]**2]]) for k in range(len(X_list))]
-    x_squared = [np.array([[x_values[k]], [x_values[k]**2]]) for k in range(len(x_values))]
+    X_list_poly = [np.array([[X_list[k]**deg] for deg in range(1, degree+1)]) for k in range(len(X_list))]
+    x_poly = [np.array([[x_values[k]**deg] for deg in range(1, degree+1)]) for k in range(len(x_values))]
     for i in range(len(x_values)):
-        pred = polynomial_network_regression(L_list, X_list_squared, x_squared[i])
+        pred = polynomial_network_regression(L_list, X_list_poly, x_poly[i])
         eigenvalues, eigenvectors = np.linalg.eig(pred)
         non_zero = []
         # to make sure we only exclude one zero from the eigenvalues
@@ -544,7 +544,7 @@ def global_poly_eigenvalue_plot(L_list, X_list, x_values):
             lambda_2s.append(0)
         else:
             print('error!!')
-    ax.scatter(lambda_1s, lambda_2s, label='quadratic', alpha = 0.3)
+    ax.scatter(lambda_1s, lambda_2s, label='degree '+str(degree), alpha = 0.3)
     
     # establish the connections between the true values and the predictions
     for idx in range(len(x_values)):
@@ -568,5 +568,5 @@ U = np.matrix([
 X_list = [x/10 for x in range(0, 11)]
 L_list = [U @ np.matrix(np.diag([x/10, math.sqrt(1 - (x/10)**2), 0])) @ U.T for x in range(0, 11)]
 # find eigenvalues for the outputs and plot the two non-zero eigvals
-x_values = [x/100 for x in range(0, 101)]
-global_poly_eigenvalue_plot(L_list, X_list, x_values)
+x_values = [x/50 for x in range(0, 51)]
+# global_poly_eigenvalue_plot(L_list, X_list, x_values, 5)
