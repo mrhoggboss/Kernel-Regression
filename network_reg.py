@@ -418,25 +418,63 @@ def polynomial_network_regression(L_list: list, X_list: list, x):
 #                    [64]])]
 
 # print(polynomial_network_regression(L_list, X_list, np.array([[7], [49]])))
-def compare_polynomial_plot(L_list, X_list, x_values, true_graphs, degree):
+def compare_polynomial_plot(L_list, X_list, x_values, true_graphs, degrees):
     y_values = dict()
     global_reg = []
-    poly_reg = []
-    X_list_poly = [np.array([[X_list[k]**deg] for deg in range(1, degree+1)]) for k in range(len(X_list))]
-    x_squared = [np.array([[x_values[k]**deg] for deg in range(1, degree+1)]) for k in range(len(x_values))]
+    
     for i in range(len(x_values)):
         global_reg.append(frobenius_norm(global_network_regression(L_list, X_list, x_values[i]), true_graphs[i]))
     y_values['global'] = global_reg
-    for i in range(len(x_values)):
-        poly_reg.append(frobenius_norm(polynomial_network_regression(L_list, X_list_poly, x_squared[i]), true_graphs[i]))
-    y_values[str(degree)] = poly_reg
-    # print(y_values)
     plt.figure(figsize=(10, 6))
     plt.plot(x_values, y_values['global'], label='global')
-    plt.plot(x_values, y_values[str(degree)], label='degree '+str(degree))
+    
+    for degree in degrees:
+        poly_reg = []
+        X_list_poly = [np.array([[X_list[k]**deg] for deg in range(1, degree+1)]) for k in range(len(X_list))]
+        x_poly = [np.array([[x_values[k]**deg] for deg in range(1, degree+1)]) for k in range(len(x_values))]
+        for i in range(len(x_values)):
+            poly_reg.append(frobenius_norm(polynomial_network_regression(L_list, X_list_poly, x_poly[i]), true_graphs[i]))
+        print('----------------------')
+        print('degree '+str(degree))
+        print('mean error: '+str(np.average(poly_reg)))
+        print('std of error: '+str(np.std(poly_reg)))
+        y_values[str(degree)] = poly_reg
+    # print(y_values)
+        plt.plot(x_values, y_values[str(degree)], label='degree '+str(degree))
     plt.xlabel('Predictor X')
     plt.ylabel('Frobenius Norm')
     plt.title('Frobenius Norm vs Predictor X for global and quadratic Network Regression')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def performance_plots(L_list, X_list, x_values, true_graphs, degrees):
+    y_values = dict()
+    global_reg = []
+    means = []
+    stds = []
+    for i in range(len(x_values)):
+        global_reg.append(frobenius_norm(global_network_regression(L_list, X_list, x_values[i]), true_graphs[i]))
+    means.append(np.average(global_reg))
+    stds.append(np.std(global_reg))
+    plt.figure(figsize=(10, 6))
+    
+    for degree in degrees:
+        poly_reg = []
+        X_list_poly = [np.array([[X_list[k]**deg] for deg in range(1, degree+1)]) for k in range(len(X_list))]
+        x_poly = [np.array([[x_values[k]**deg] for deg in range(1, degree+1)]) for k in range(len(x_values))]
+        for i in range(len(x_values)):
+            poly_reg.append(frobenius_norm(polynomial_network_regression(L_list, X_list_poly, x_poly[i]), true_graphs[i]))
+        means.append(np.average(poly_reg))
+        stds.append(np.std(poly_reg))
+
+    normalized_means = [max(means) - error for error in means]
+    normalized_means.pop(-2)
+    stds.pop(-2)
+    plt.errorbar([i+1 for i in range(degree) if i != 7], normalized_means,yerr=stds, capsize=5, capthick=1)
+    plt.xlabel('Degree of Polynomial Regression n')
+    plt.ylabel('Performance (normalized error)')
+    plt.title('Performance of Polynomial network regression on the Toy Example for X between 2 to 8')
     plt.legend()
     plt.grid(True)
     plt.show()
@@ -446,7 +484,8 @@ true_graphs = [np.array([[2, -1, -1],
                [-1, 3, -2],
                [-1, -2, 3]])/k for k in range(2, 9)]
 
-# compare_polynomial_plot(L_list, X_list, x_values, true_graphs, 4)
+# compare_polynomial_plot(L_list, X_list, x_values, true_graphs, list(range(2, 10)))
+performance_plots(L_list, X_list, x_values, true_graphs, list(range(2, 10)))
 
 # # ----------------------------------------------------------------------------------------------------
 # # comparing eigvals for global and polynomial reg
@@ -476,6 +515,10 @@ def global_poly_eigenvalue_plot(L_list, X_list, x_values, degree: int):
     for i in range(len(x_values)):
         pred = global_network_regression(L_list, X_list, x_values[i])
         eigenvalues, eigenvectors = np.linalg.eig(pred)
+        # if i < 5:
+        #     print(eigenvalues)
+        #     print(pred)
+        #     print('---------------------------')
         non_zero = []
         # to make sure we only exclude one zero from the eigenvalues
         flag = True
@@ -484,17 +527,16 @@ def global_poly_eigenvalue_plot(L_list, X_list, x_values, degree: int):
                 flag = False
             else:
                 non_zero.append(eval)
-
         # non_zero.sort()
-        if 5.77e-01 < abs(eigenvectors[0, 0]) < 5.78e-01:
+        if 5.77e-01 < abs(eigenvectors[0, 0]) < 5.78e-01 and 7.07e-01 < abs(eigenvectors[0, 1])< 7.08e-01:
             # column corresponding to zero goes first
             lambda_1s.append(non_zero[0])
             lambda_2s.append(non_zero[1])
-        elif 4.08e-01 < abs(eigenvectors[0, 0]) < 4.09e-01:
+        elif 4.08e-01 < abs(eigenvectors[0, 0]) < 4.09e-01 and 7.07e-01 < abs(eigenvectors[0, 1])< 7.08e-01:
             # column corresponding to y goes first
             lambda_2s.append(non_zero[0])
             lambda_1s.append(non_zero[1])
-        elif 7.07e-01 < abs(eigenvectors[0, 0])< 7.08e-01:
+        elif 7.07e-01 < abs(eigenvectors[0, 0])< 7.08e-01 and 5.77e-01 < abs(eigenvectors[0, 1]) < 5.78e-01:
             # column corresponding to x goes first
             lambda_1s.append(non_zero[0])
             lambda_2s.append(non_zero[1])
@@ -567,6 +609,9 @@ U = np.matrix([
 # generate the x's, and construct the graphs using reverse SVD
 X_list = [x/10 for x in range(0, 11)]
 L_list = [U @ np.matrix(np.diag([x/10, math.sqrt(1 - (x/10)**2), 0])) @ U.T for x in range(0, 11)]
+# for gl in L_list:
+#     if gl[0, 1] >= 0:
+#         print(gl)
 # find eigenvalues for the outputs and plot the two non-zero eigvals
 x_values = [x/50 for x in range(0, 51)]
-# global_poly_eigenvalue_plot(L_list, X_list, x_values, 5)
+# global_poly_eigenvalue_plot(L_list, X_list, x_values, 2)
