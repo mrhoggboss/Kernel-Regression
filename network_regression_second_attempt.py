@@ -84,10 +84,10 @@ def polynomial_network_regression(L_list: list, X_list: list, x):
     
     # find weights and B
     def weights_poly(X, x):
-        print("Xmu")
-        print(str(X) + ' '+str(mu))
-        print(str((X-mu).T))
-        print(sigma_inv @ (x - mu))
+        # print("Xmu")
+        # print(str(X) + ' '+str(mu))
+        # print(str((X-mu).T))
+        # print(sigma_inv @ (x - mu))
         weight = 1 + (((X - mu).T) @ (sigma_inv @ (x - mu)))
         # print(np.size(weight))
         return weight[0, 0]
@@ -96,13 +96,13 @@ def polynomial_network_regression(L_list: list, X_list: list, x):
 
     if (not (3.99 < sum(weights) < 4.01)):
         print("sum of weights is not 4, it is "+str(sum(weights)))
-    degree = np.size(x)
-    print('the weights to order ' + str(degree))
-    print(weights)
+    # degree = np.size(x)
+    # print('the weights to order ' + str(degree))
+    # print(weights)
 
     B = sum((weights[k] * L_list[k]) for k in range(n)) / sum(weights) # this is a m by m matrix
-    print('barycenter')
-    print(B)
+    # print('barycenter')
+    # print(B)
     # now we solve the optimization problem
     # minimizer L
     L = cp.Variable((m, m), symmetric=True)
