@@ -1,0 +1,2 @@
+from network_reg import global_network_regression
+

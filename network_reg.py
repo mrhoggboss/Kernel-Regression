@@ -364,8 +364,13 @@ def polynomial_network_regression(L_list: list, X_list: list, x):
         weight = 1 + (X - mu).T @ sigma_inv @ (x - mu)
         return weight[0, 0]
     m = L_list[0].shape[0] # the number of nodes - also the dimension of the graph laplacians
-    n = len(L_list) # the number (X, L), i.e., the number of datapoints
+    n = len(L_list) # the number of (X, L), i.e., the number of datapoints
     weights = [weights_global(X_list[k], x) for k in range(n)]
+
+    degree = np.size(x)
+    print('the weights to order ' + str(degree))
+    print(weights)
+
     B = sum((weights[k] * L_list[k]) for k in range(n)) / sum(weights) # this is a m by m matrix
 
     # now we solve the optimization problem
@@ -388,10 +393,18 @@ def polynomial_network_regression(L_list: list, X_list: list, x):
 
     # keep only the positive eig vectors
     eval, evec = np.linalg.eig(sol)
+    print(eval)
     eval = np.where(eval > 0, eval, 0)
+    print(eval)
     sol = evec @ np.diag(eval) @ evec.T
 
     return sol
+
+# x_values = [k for k in range(2, 9)]
+# true_graphs = [np.array([[2, -1, -1],
+#                [-1, 3, -2],
+#                [-1, -2, 3]])/k for k in range(2, 9)]
+# print(polynomial_network_regression(L_list, [[2], [4], [8]], [[2], [4], [8]]))
 
 # # the toy example with quadratic covariates
 # L1 = np.array([[1, -0.5, -0.5], 
@@ -449,7 +462,6 @@ def compare_polynomial_plot(L_list, X_list, x_values, true_graphs, degrees):
     plt.show()
 
 def performance_plots(L_list, X_list, x_values, true_graphs, degrees):
-    y_values = dict()
     global_reg = []
     means = []
     stds = []
@@ -468,10 +480,12 @@ def performance_plots(L_list, X_list, x_values, true_graphs, degrees):
         means.append(np.average(poly_reg))
         stds.append(np.std(poly_reg))
 
+    print("poly_reg is ")
+    print(poly_reg)
     normalized_means = [max(means) - error for error in means]
     normalized_means.pop(-2)
     stds.pop(-2)
-    plt.errorbar([i+1 for i in range(degree) if i != 7], normalized_means,yerr=stds, capsize=5, capthick=1)
+    plt.errorbar([i+1 for i in range(degree) if i != 7], normalized_means,yerr=stds, capsize=5, capthick=1) # degree 8 was way to bad
     plt.xlabel('Degree of Polynomial Regression n')
     plt.ylabel('Performance (normalized error)')
     plt.title('Performance of Polynomial network regression on the Toy Example for X between 2 to 8')
@@ -484,134 +498,144 @@ true_graphs = [np.array([[2, -1, -1],
                [-1, 3, -2],
                [-1, -2, 3]])/k for k in range(2, 9)]
 
+# print(true_graphs)
 # compare_polynomial_plot(L_list, X_list, x_values, true_graphs, list(range(2, 10)))
 performance_plots(L_list, X_list, x_values, true_graphs, list(range(2, 10)))
+
 
 # # ----------------------------------------------------------------------------------------------------
 # # comparing eigvals for global and polynomial reg
 
-def global_poly_eigenvalue_plot(L_list, X_list, x_values, degree: int):
-    '''
-    X_list: a list of floats representing the covariates
-    x_values: a list of floats representing the inputs to the regression algorithm
+# def global_poly_eigenvalue_plot(L_list, X_list, x_values, degree: int):
+#     '''
+#     X_list: a list of floats representing the covariates
+#     x_values: a list of floats representing the inputs to the regression algorithm
 
-    plots the eigenvalues of the outputs of network regression for x_values.
-    '''
-    fig, ax = plt.subplots()
+#     plots the eigenvalues of the outputs of network regression for x_values.
+#     '''
+#     fig, ax = plt.subplots()
     
-    # plotting the true values
-    x_vals = np.array(x_values)
-    x_vals = x_vals[0 <= x_vals]
-    x_vals = x_vals[x_vals <= 1]
-    y_values = []
-    for x in x_vals:
-        y_values.append(math.sqrt(1 - x**2))
-    plt.scatter(x_vals, y_values, label='true values', color = 'r')
+#     # plotting the true values
+#     x_vals = np.array(x_values)
+#     x_vals = x_vals[0 <= x_vals]
+#     x_vals = x_vals[x_vals <= 1]
+#     y_values = []
+#     for x in x_vals:
+#         y_values.append(math.sqrt(1 - x**2))
+#     plt.scatter(x_vals, y_values, label='true values', color = 'r')
     
-    # plotting the predictions for global
-    lambda_1s = []
-    lambda_2s = []
+#     # plotting the predictions for global
+#     lambda_1s = []
+#     lambda_2s = []
 
-    for i in range(len(x_values)):
-        pred = global_network_regression(L_list, X_list, x_values[i])
-        eigenvalues, eigenvectors = np.linalg.eig(pred)
-        # if i < 5:
-        #     print(eigenvalues)
-        #     print(pred)
-        #     print('---------------------------')
-        non_zero = []
-        # to make sure we only exclude one zero from the eigenvalues
-        flag = True
-        for eval in eigenvalues:
-            if abs(eval) < 1e-15 and flag:
-                flag = False
-            else:
-                non_zero.append(eval)
-        # non_zero.sort()
-        if 5.77e-01 < abs(eigenvectors[0, 0]) < 5.78e-01 and 7.07e-01 < abs(eigenvectors[0, 1])< 7.08e-01:
-            # column corresponding to zero goes first
-            lambda_1s.append(non_zero[0])
-            lambda_2s.append(non_zero[1])
-        elif 4.08e-01 < abs(eigenvectors[0, 0]) < 4.09e-01 and 7.07e-01 < abs(eigenvectors[0, 1])< 7.08e-01:
-            # column corresponding to y goes first
-            lambda_2s.append(non_zero[0])
-            lambda_1s.append(non_zero[1])
-        elif 7.07e-01 < abs(eigenvectors[0, 0])< 7.08e-01 and 5.77e-01 < abs(eigenvectors[0, 1]) < 5.78e-01:
-            # column corresponding to x goes first
-            lambda_1s.append(non_zero[0])
-            lambda_2s.append(non_zero[1])
-        elif eigenvectors[0, 0] == 1 and eigenvectors[1, 1] == 1 and eigenvectors[2, 2] == 1:
-            lambda_1s.append(0)
-            lambda_2s.append(0)
-        else:
-            print('error!!')
-    ax.scatter(lambda_1s, lambda_2s, label='global', alpha = 0.3)
+#     for i in range(len(x_values)):
+#         pred = global_network_regression(L_list, X_list, x_values[i])
+#         eigenvalues, eigenvectors = np.linalg.eig(pred)
+#         # if i < 5:
+#         #     print(eigenvalues)
+#         #     print(pred)
+#         #     print('---------------------------')
+#         non_zero = []
+#         # to make sure we only exclude one zero from the eigenvalues
+#         flag = True
+#         for eval in eigenvalues:
+#             if abs(eval) < 1e-15 and flag:
+#                 flag = False
+#             else:
+#                 non_zero.append(eval)
+#         # non_zero.sort()
+#         if 5.77e-01 < abs(eigenvectors[0, 0]) < 5.78e-01 and 7.07e-01 < abs(eigenvectors[0, 1])< 7.08e-01:
+#             # column corresponding to zero goes first
+#             lambda_1s.append(non_zero[0])
+#             lambda_2s.append(non_zero[1])
+#         elif 4.08e-01 < abs(eigenvectors[0, 0]) < 4.09e-01 and 7.07e-01 < abs(eigenvectors[0, 1])< 7.08e-01:
+#             # column corresponding to y goes first
+#             lambda_2s.append(non_zero[0])
+#             lambda_1s.append(non_zero[1])
+#         elif 7.07e-01 < abs(eigenvectors[0, 0])< 7.08e-01 and 5.77e-01 < abs(eigenvectors[0, 1]) < 5.78e-01:
+#             # column corresponding to x goes first
+#             lambda_1s.append(non_zero[0])
+#             lambda_2s.append(non_zero[1])
+#         elif eigenvectors[0, 0] == 1 and eigenvectors[1, 1] == 1 and eigenvectors[2, 2] == 1:
+#             lambda_1s.append(0)
+#             lambda_2s.append(0)
+#         else:
+#             print('error!!')
+#     ax.scatter(lambda_1s, lambda_2s, label='global', alpha = 0.3)
 
-    # establish the connections between the true values and the predictions
-    for idx in range(len(x_values)):
-        plt.plot([lambda_1s[idx], x_vals[idx]], [lambda_2s[idx], y_values[idx]], 'b-')
+#     # establish the connections between the true values and the predictions
+#     for idx in range(len(x_values)):
+#         plt.plot([lambda_1s[idx], x_vals[idx]], [lambda_2s[idx], y_values[idx]], 'b-')
 
-    # plotting the predictions for quadratic
-    lambda_1s = []
-    lambda_2s = []
-    X_list_poly = [np.array([[X_list[k]**deg] for deg in range(1, degree+1)]) for k in range(len(X_list))]
-    x_poly = [np.array([[x_values[k]**deg] for deg in range(1, degree+1)]) for k in range(len(x_values))]
-    for i in range(len(x_values)):
-        pred = polynomial_network_regression(L_list, X_list_poly, x_poly[i])
-        eigenvalues, eigenvectors = np.linalg.eig(pred)
-        non_zero = []
-        # to make sure we only exclude one zero from the eigenvalues
-        flag = True
-        for eval in eigenvalues:
-            if abs(eval) < 1e-15 and flag:
-                flag = False
-            else:
-                non_zero.append(eval)
+#     # plotting the predictions for quadratic
+#     lambda_1s = []
+#     lambda_2s = []
+#     X_list_poly = [np.array([[X_list[k]**deg] for deg in range(1, degree+1)]) for k in range(len(X_list))]
+#     x_poly = [np.array([[x_values[k]**deg] for deg in range(1, degree+1)]) for k in range(len(x_values))]
+#     for i in range(len(x_values)):
+#         pred = polynomial_network_regression(L_list, X_list_poly, x_poly[i])
+#         eigenvalues, eigenvectors = np.linalg.eig(pred)
+#         non_zero = []
+#         # to make sure we only exclude one zero from the eigenvalues
+#         flag = True
+#         for eval in eigenvalues:
+#             if abs(eval) < 1e-15 and flag:
+#                 flag = False
+#             else:
+#                 non_zero.append(eval)
 
-        # non_zero.sort()
-        if 5.77e-01 < abs(eigenvectors[0, 0]) < 5.78e-01:
-            # column corresponding to zero goes first
-            lambda_1s.append(non_zero[0])
-            lambda_2s.append(non_zero[1])
-        elif 4.08e-01 < abs(eigenvectors[0, 0]) < 4.09e-01:
-            # column corresponding to y goes first
-            lambda_2s.append(non_zero[0])
-            lambda_1s.append(non_zero[1])
-        elif 7.07e-01 < abs(eigenvectors[0, 0])< 7.08e-01:
-            # column corresponding to x goes first
-            lambda_1s.append(non_zero[0])
-            lambda_2s.append(non_zero[1])
-        elif eigenvectors[0, 0] == 1 and eigenvectors[1, 1] == 1 and eigenvectors[2, 2] == 1:
-            lambda_1s.append(0)
-            lambda_2s.append(0)
-        else:
-            print('error!!')
-    ax.scatter(lambda_1s, lambda_2s, label='degree '+str(degree), alpha = 0.3)
+#         # non_zero.sort()
+#         if 5.77e-01 < abs(eigenvectors[0, 0]) < 5.78e-01:
+#             # column corresponding to zero goes first
+#             lambda_1s.append(non_zero[0])
+#             lambda_2s.append(non_zero[1])
+#         elif 4.08e-01 < abs(eigenvectors[0, 0]) < 4.09e-01:
+#             # column corresponding to y goes first
+#             lambda_2s.append(non_zero[0])
+#             lambda_1s.append(non_zero[1])
+#         elif 7.07e-01 < abs(eigenvectors[0, 0])< 7.08e-01:
+#             # column corresponding to x goes first
+#             lambda_1s.append(non_zero[0])
+#             lambda_2s.append(non_zero[1])
+#         elif eigenvectors[0, 0] == 1 and eigenvectors[1, 1] == 1 and eigenvectors[2, 2] == 1:
+#             lambda_1s.append(0)
+#             lambda_2s.append(0)
+#         else:
+#             print('error!!')
+#     ax.scatter(lambda_1s, lambda_2s, label='degree '+str(degree), alpha = 0.3)
     
-    # establish the connections between the true values and the predictions
-    for idx in range(len(x_values)):
-        plt.plot([lambda_1s[idx], x_vals[idx]], [lambda_2s[idx], y_values[idx]], 'r-')
+#     # establish the connections between the true values and the predictions
+#     for idx in range(len(x_values)):
+#         plt.plot([lambda_1s[idx], x_vals[idx]], [lambda_2s[idx], y_values[idx]], 'r-')
     
-    plt.xlabel('lambda1')
-    plt.ylabel('lambda2')
-    plt.title('A plot of non-zero eigenvalues of global and quadratic regression results')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+#     plt.xlabel('lambda1')
+#     plt.ylabel('lambda2')
+#     plt.title('A plot of non-zero eigenvalues of global and quadratic regression results')
+#     plt.legend()
+#     plt.grid(True)
+#     plt.show()
 
-# # the eigenvector matrix we use (basis) is
-U = np.matrix([
-    [-math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
-    [math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
-    [0, math.sqrt(6)/3, math.sqrt(3)/3]
-])
+# # # the eigenvector matrix we use (basis) is
+# U = np.matrix([
+#     [-math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
+#     [math.sqrt(2)/2, -math.sqrt(6)/6, math.sqrt(3)/3],
+#     [0, math.sqrt(6)/3, math.sqrt(3)/3]
+# ])
 
-# generate the x's, and construct the graphs using reverse SVD
-X_list = [x/10 for x in range(0, 11)]
-L_list = [U @ np.matrix(np.diag([x/10, math.sqrt(1 - (x/10)**2), 0])) @ U.T for x in range(0, 11)]
-# for gl in L_list:
+# # generate the x's, and construct the graphs using reverse SVD
+# X_list = [x/10 for x in range(0, 11)]
+# L_list = [U @ np.matrix(np.diag([x/10000, math.sqrt(1 - (x/10000)**2), 0])) @ U.T for x in range(0, 10001)]
+# for idx in range(len(L_list)):
+#     gl = L_list[idx]
 #     if gl[0, 1] >= 0:
+#         print('x is '+str(idx/10000))
 #         print(gl)
-# find eigenvalues for the outputs and plot the two non-zero eigvals
-x_values = [x/50 for x in range(0, 51)]
-# global_poly_eigenvalue_plot(L_list, X_list, x_values, 2)
+# # L_list = [U @ np.matrix(np.diag([x/10000, 1 - (x/10000), 0])) @ U.T for x in range(0, 10001)]
+# # for idx in range(len(L_list)):
+# #     gl = L_list[idx]
+# #     if gl[0, 1] >= 0:
+# #         print('x is '+str(idx/10000))
+# #         print(gl)
+# # find eigenvalues for the outputs and plot the two non-zero eigvals
+# x_values = [x/50 for x in range(0, 51)]
+# # global_poly_eigenvalue_plot(L_list, X_list, x_values, 2)
